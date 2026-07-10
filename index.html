@@ -701,7 +701,15 @@ function pickAiTeam(userTeam){
 async function getRoom(code){
   try{
     const snapshot = await db.ref('rooms/' + code).once('value');
-    if(snapshot.exists()){ return snapshot.val(); }
+    if(snapshot.exists()){
+      let r = snapshot.val();
+      // Firebase'in sildiği boş değerleri çökmeyi önlemek için geri ekliyoruz:
+      r.teams = r.teams || {};
+      r.guesses = r.guesses || [];
+      r.passes = r.passes || {};
+      r.scores = r.scores || {};
+      return r;
+    }
     return null;
   }catch(e){ return null; }
 }
