@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UC2BIR | İki Takım, Bir İsim</title>
+<style>
+  :root{
+    --pitch:#0f2e22;
+    --pitch-deep:#081d15;
+    --plain-bg:#111417;
+    --plain-panel:#181c20;
+    --chalk:#f4efdf;
+    --amber:#f2b705;
+    --amber-dim:#a17e08;
+    --wrong:#e4572e;
+    --right:#4ea36a;
+    --line:rgba(244,239,223,0.14);
+    --mono: 'Lucida Console', 'Monaco', monospace;
+    --head: 'Impact', 'Arial Black', 'Haettenschweiler', sans-serif;
+    --body: 'Verdana', 'Geneva', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--plain-bg);
+    color:var(--chalk);
+    font-family: var(--body);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px 60px;
+    transition: background .2s ease;
+  }
+  body.theme-stadium{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(242,183,5,0.08), transparent 60%),
+      repeating-linear-gradient(0deg, var(--pitch) 0px, var(--pitch) 46px, var(--pitch-deep) 46px, var(--pitch-deep) 92px);
+  }
+  .wrap{width:100%;max-width:720px;}
+  .topbar{
+    display:flex;justify-content:flex-end;margin-bottom:6px;
+  }
+  .brand{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .brand .eyebrow{
+    font-family:var(--mono);
+    letter-spacing:0.35em;
+    font-size:11px;
+    color:var(--amber);
+    text-transform:uppercase;
+  }
+  .brand h1{
+    font-family:var(--head);
+    font-weight:700;
+    font-size:clamp(28px,6vw,44px);
+    letter-spacing:0.02em;
+    margin:6px 0 4px;
+    text-transform:uppercase;
+    text-shadow:0 2px 0 rgba(0,0,0,0.4);
+  }
+  .brand p{
+    color:rgba(244,239,223,0.6);
+    font-size:14px;
+    margin:0;
+  }
+  .card{
+    background: var(--plain-panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px;
+  }
+  body.theme-stadium .card{
+    background:rgba(8,29,21,0.55);
+    backdrop-filter: blur(2px);
+  }
+  .card + .card{margin-top:18px;}
+  .card.win{border-color:var(--right);}
+  .card.lose{border-color:var(--wrong);}
+  label{
+    display:block;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:rgba(244,239,223,0.55);
+    margin-bottom:8px;
+  }
+  input[type=text]{
+    width:100%;
+    background:var(--pitch-deep);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    font-size:16px;
+    padding:12px 14px;
+    border-radius:2px;
+    font-family:var(--body);
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--amber);}
+  input[type=text]:disabled{opacity:0.5;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .row > *{flex:1;min-width:140px;}
+  button{
+    font-family:var(--mono);
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    font-size:13px;
+    font-weight:bold;
+    background:var(--amber);
+    color:var(--pitch-deep);
+    border:none;
+    padding:13px 18px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  button:hover{filter:brightness(1.08);}
+  button:active{transform:scale(0.98);}
+  button.ghost{
+    background:transparent;
+    color:var(--chalk);
+    border:1px solid var(--line);
+  }
+  button.small{padding:8px 12px;font-size:11px;flex:none;min-width:0;}
+  button.danger{background:var(--wrong);color:#fff;}
+  button:disabled{opacity:0.35;cursor:not-allowed;}
+  .hint{font-size:12px;color:rgba(244,239,223,0.45);margin-top:8px;}
+  .err{color:var(--wrong);font-size:13px;margin-top:10px;font-family:var(--mono);}
+
+  .roomcode{
+    font-family:var(--mono);
+    font-size:34px;
+    letter-spacing:0.2em;
+    color:var(--amber);
+    text-align:center;
+    padding:14px 0;
+    border-top:1px dashed var(--line);
+    border-bottom:1px dashed var(--line);
+    margin:16px 0;
+  }
+  .playerslots{display:flex;gap:14px;margin-top:16px;}
+  .slot{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:14px;
+    text-align:center;
+  }
+  .slot.filled{border-color:var(--amber-dim);}
+  .slot .tag{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;color:rgba(244,239,223,0.45);text-transform:uppercase;}
+  .slot .name{font-size:17px;margin-top:6px;font-weight:bold;}
+  .slot .empty{color:rgba(244,239,223,0.3);font-style:italic;font-size:14px;margin-top:6px;}
+
+  .scoreboard{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin:8px 0 20px;
+    border:1px solid var(--amber-dim);
+  }
+  .teampanel{
+    flex:1;
+    padding:20px 14px;
+    text-align:center;
+    background:var(--pitch-deep);
+  }
+  .teampanel .who{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.2em;
+    color:var(--amber);
+    text-transform:uppercase;
+  }
+  .teampanel .team{
+    font-family:var(--head);
+    font-size:clamp(18px,4vw,24px);
+    font-weight:700;
+    text-transform:uppercase;
+    margin-top:8px;
+    min-height:28px;
+  }
+  .vs{
+    width:56px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-weight:bold;
+    color:var(--amber);
+    background:var(--pitch-deep);
+    border-left:1px solid var(--amber-dim);
+    border-right:1px solid var(--amber-dim);
+  }
+
+  .feed{
+    margin-top:18px;
+    max-height:260px;
+    overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .feed-item{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 4px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    animation: slidein .2s ease;
+  }
+  @keyframes slidein{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .feed-item .g-name{font-weight:bold;}
+  .feed-item .g-by{font-family:var(--mono);font-size:11px;color:rgba(244,239,223,0.45);}
+  .feed-item.correct .g-name{color:var(--right);}
+  .feed-item.wrong .g-name{color:var(--wrong);text-decoration:line-through;opacity:0.7;}
+  .feed-empty{padding:16px 4px;color:rgba(244,239,223,0.35);font-size:13px;font-style:italic;}
+
+  .flipcard{
+    text-align:center;
+    padding:30px 10px;
+  }
+  .flipcard .label{font-family:var(--mono);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;}
+  .card.win .label{color:var(--right);}
+  .card.lose .label{color:var(--wrong);}
+  .flipname{
+    font-family:var(--head);
+    font-size:clamp(26px,7vw,40px);
+    font-weight:700;
+    margin:14px 0;
+    display:inline-block;
+    padding:10px 22px;
+    background:var(--amber);
+    color:var(--pitch-deep);
+    border-radius:2px;
+    animation: flipreveal .45s cubic-bezier(.2,.9,.3,1.2);
+    transform-origin:center;
+  }
+  @keyframes flipreveal{
+    0%{transform:rotateX(90deg); opacity:0;}
+    60%{transform:rotateX(-12deg); opacity:1;}
+    100%{transform:rotateX(0deg); opacity:1;}
+  }
+  .score-strip{
+    display:flex;justify-content:center;gap:26px;margin-top:18px;
+    font-family:var(--mono);font-size:13px;color:rgba(244,239,223,0.6);
+  }
+  .score-strip b{color:var(--amber);font-size:16px;}
+
+  .status-line{
+    text-align:center;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.1em;
+    color:rgba(244,239,223,0.55);
+    margin-top:14px;
+  }
+  .status-line.live::before{
+    content:"● ";
+    color:var(--wrong);
+    animation:pulse 1.2s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.25;}}
+  .center{text-align:center;}
+  .footer-note{
+    text-align:center;font-size:11px;color:rgba(244,239,223,0.3);margin-top:30px;line-height:1.6;
+  }
+  .loading{text-align:center;padding:40px;color:rgba(244,239,223,0.5);font-family:var(--mono);font-size:13px;}
+  .modepick{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+  .waitpass{
+    text-align:center;padding:20px;border:1px dashed var(--line);border-radius:3px;color:rgba(244,239,223,0.6);font-family:var(--mono);font-size:12px;letter-spacing:0.08em;
+  }
+</style>
+</head>
+<body class="theme-plain">
+<div class="wrap">
+  <div class="topbar">
+    <button id="themeToggle" class="ghost small">Görünüm: Sade</button>
+  </div>
+  <div class="brand">
+    <div class="eyebrow">İKİ TAKIM · TEK İSİM</div>
+    <h1>UC2BIR</h1>
+    <p>Sen bir takım söyle, rakibin bir takım söylesin. İkisinde de forma giymiş oyuncuyu ilk bulan kazanır.</p>
+  </div>
+  <div id="app"><div class="loading">Yükleniyor...</div></div>
+ <div class="footer-note">yeet23 tarafından yapılmıştır.<br>Oyuncu-kulüp verileri geniş bir referans kümesinden derlenmiştir; bilgiler dönemsel olarak eksik/hatalı olabilir.</div>
+</div>
+
+<!-- Firebase Kütüphaneleri -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+// Senin Firebase Ayarların
+const firebaseConfig = {
+  apiKey: "AIzaSyDfAj5Fy8Z3ViZb9_1NE6huh3nS9HCH_Wo",
+  authDomain: "ortak-oyuncu.firebaseapp.com",
+  databaseURL: "https://ortak-oyuncu-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ortak-oyuncu",
+  storageBucket: "ortak-oyuncu.firebasestorage.app",
+  messagingSenderId: "19820440793",
+  appId: "1:19820440793:web:70f86c611a1e1ba7aae2c8"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+(function(){
+// ---------- OYUNCU VERİTABANI ----------
+
+// ---------- OYUNCU VERİTABANI ----------
+const RAW = [
+["Wesley Sneijder", ["Ajax","Real Madrid","Inter","Galatasaray"]],
+["Didier Drogba", ["Chelsea","Galatasaray"]],
+["Robinho", ["Real Madrid","Man City","Milan","Sivasspor","Başakşehir"]],
+["Roberto Carlos", ["Inter","Real Madrid","Fenerbahçe"]],
+["Mesut Özil", ["Real Madrid","Arsenal","Fenerbahçe","Başakşehir"]],
+["Nani", ["Sporting CP","Man United","Fenerbahçe"]],
+["Robin van Persie", ["Arsenal","Man United","Fenerbahçe"]],
+["Dirk Kuyt", ["Liverpool","Fenerbahçe"]],
+["Raul Meireles", ["Porto","Liverpool","Chelsea","Fenerbahçe"]],
+["Vincent Aboubakar", ["Porto","Beşiktaş"]],
+["Ricardo Quaresma", ["Sporting CP","Barcelona","Porto","Inter","Chelsea","Beşiktaş"]],
+["Demba Ba", ["Beşiktaş","Chelsea","Göztepe"]],
+["Gökhan Inler", ["Napoli","Fenerbahçe"]],
+["Burak Yılmaz", ["Trabzonspor","Beşiktaş","Galatasaray"]],
+["Emre Belözoğlu", ["Galatasaray","Inter","Atletico Madrid","Fenerbahçe"]],
+["Hakan Şükür", ["Galatasaray","Inter"]],
+["Rüştü Reçber", ["Fenerbahçe","Barcelona","Beşiktaş"]],
+["Colin Kazim-Richards", ["Fenerbahçe","Bursaspor","Galatasaray","Göztepe"]],
+["Zlatan Ibrahimovic", ["Ajax","Juventus","Inter","Barcelona","Milan","PSG","Man United"]],
+["Cristiano Ronaldo", ["Sporting CP","Man United","Real Madrid","Juventus"]],
+["Luka Modric", ["Tottenham","Real Madrid"]],
+["Angel Di Maria", ["Benfica","Real Madrid","Man United","PSG","Juventus"]],
+["Gonzalo Higuain", ["Real Madrid","Napoli","Juventus","Chelsea"]],
+["Edin Dzeko", ["Man City","Roma","Inter","Fenerbahçe"]],
+["Neymar", ["Barcelona","PSG"]],
+["Luis Suarez", ["Ajax","Liverpool","Barcelona","Atletico Madrid"]],
+["Kylian Mbappe", ["PSG","Real Madrid"]],
+["Sergio Ramos", ["Real Madrid","PSG"]],
+["Gerard Pique", ["Man United","Barcelona"]],
+["David Villa", ["Barcelona","Atletico Madrid"]],
+["Xabi Alonso", ["Liverpool","Real Madrid","Bayern Munich"]],
+["Toni Kroos", ["Bayern Munich","Real Madrid"]],
+["Robert Lewandowski", ["Borussia Dortmund","Bayern Munich","Barcelona"]],
+["Franck Ribery", ["Galatasaray","Bayern Munich"]],
+["Arjen Robben", ["PSV","Chelsea","Real Madrid","Bayern Munich"]],
+["Mario Gomez", ["Bayern Munich","Beşiktaş"]],
+["James Rodriguez", ["Porto","Real Madrid","Bayern Munich"]],
+["Eden Hazard", ["Chelsea","Real Madrid"]],
+["Andrea Pirlo", ["Inter","Milan","Juventus"]],
+["Ronaldinho", ["Barcelona","Milan"]],
+["Kaka", ["Milan","Real Madrid"]],
+["David Beckham", ["Man United","Real Madrid","Milan","PSG"]],
+["Andriy Shevchenko", ["Milan","Chelsea"]],
+["Fernando Torres", ["Atletico Madrid","Liverpool","Chelsea","Milan"]],
+["Diego Costa", ["Atletico Madrid","Chelsea"]],
+["Willian", ["Chelsea","Arsenal"]],
+["Ramires", ["Chelsea","Benfica"]],
+["Falcao", ["Porto","Atletico Madrid","Chelsea","Man United","Galatasaray"]],
+["Samuel Eto'o", ["Real Madrid","Barcelona","Inter","Chelsea","Antalyaspor","Konyaspor"]],
+["Arda Turan", ["Galatasaray","Atletico Madrid","Barcelona","Başakşehir"]],
+["Axel Witsel", ["Benfica","Borussia Dortmund","Atletico Madrid"]],
+["Nemanja Matic", ["Chelsea","Benfica","Man United","Roma"]],
+["Radja Nainggolan", ["Roma","Inter"]],
+["Miralem Pjanic", ["Roma","Juventus","Barcelona","Beşiktaş"]],
+["Kevin-Prince Boateng", ["Tottenham","Borussia Dortmund","Milan","Barcelona","Beşiktaş"]],
+["Sadio Mane", ["Liverpool","Bayern Munich"]],
+["Mohamed Salah", ["Chelsea","Roma","Liverpool"]],
+["Yaya Toure", ["Barcelona","Man City"]],
+["Kolo Toure", ["Arsenal","Man City","Liverpool"]],
+["Didier Zokora", ["Tottenham","Trabzonspor"]],
+["Emmanuel Adebayor", ["Arsenal","Man City","Real Madrid","Tottenham","Başakşehir"]],
+["Mats Hummels", ["Bayern Munich","Borussia Dortmund","Roma"]],
+["Jerome Boateng", ["Man City","Bayern Munich"]],
+["Bastian Schweinsteiger", ["Bayern Munich","Man United"]],
+["Mario Balotelli", ["Inter","Man City","Milan","Liverpool"]],
+["Carlos Tevez", ["Man United","Man City","Juventus"]],
+["Javier Mascherano", ["Liverpool","Barcelona"]],
+["Diego Forlan", ["Man United","Atletico Madrid","Inter"]],
+["Sergio Aguero", ["Atletico Madrid","Man City","Barcelona"]],
+["Lionel Messi", ["Barcelona","PSG"]],
+["Pepe", ["Porto","Real Madrid","Beşiktaş"]],
+["Fabio Coentrao", ["Benfica","Real Madrid","Sporting CP"]],
+["Danilo Pereira", ["Porto","PSG"]],
+["Mario Mandzukic", ["Bayern Munich","Atletico Madrid","Juventus"]],
+["Casemiro", ["Real Madrid","Man United"]],
+["Fred", ["Man United","Fenerbahçe"]],
+["Anderson Talisca", ["Benfica","Beşiktaş","Fenerbahçe"]],
+["Jose Sosa", ["Atletico Madrid","Napoli","Beşiktaş","Trabzonspor"]],
+["Cengiz Ünder", ["Başakşehir","Roma","Fenerbahçe"]],
+["Caner Erkin", ["Fenerbahçe","Beşiktaş"]],
+["Nuri Şahin", ["Borussia Dortmund","Real Madrid","Liverpool","Antalyaspor"]],
+["Steven Nzonzi", ["Roma","Galatasaray"]],
+["Michael Essien", ["Chelsea","Real Madrid","Milan"]],
+["John Obi Mikel", ["Chelsea","Trabzonspor"]],
+["Victor Moses", ["Chelsea","Fenerbahçe"]],
+["Bruno Alves", ["Porto","Beşiktaş"]],
+["Ryan Babel", ["Ajax","Liverpool","Kasımpaşa","Beşiktaş","Galatasaray"]],
+["Filip Kostic", ["Juventus","Fenerbahçe"]],
+["Dusan Tadic", ["Ajax","Fenerbahçe"]],
+["Luuk de Jong", ["PSV","Galatasaray"]],
+["Wout Weghorst", ["Beşiktaş","Man United","Ajax"]],
+["Dries Mertens", ["PSV","Napoli","Galatasaray"]],
+["Gökhan Zan", ["Fenerbahçe","Galatasaray","Beşiktaş"]],
+["Tolga Zengin", ["Trabzonspor","Beşiktaş"]],
+["Mehmet Topal", ["Fenerbahçe","Galatasaray"]],
+["Volkan Şen", ["Bursaspor","Fenerbahçe","Beşiktaş","Antalyaspor"]],
+["Gökdeniz Karadeniz", ["Fenerbahçe","Trabzonspor"]],
+["Uğur Boral", ["Galatasaray","Trabzonspor"]],
+["Serdar Aziz", ["Bursaspor","Fenerbahçe"]],
+["Semih Kaya", ["Galatasaray","Trabzonspor"]],
+["Umut Bulut", ["Trabzonspor","Galatasaray","Kayserispor"]],
+["Mevlüt Erdinç", ["PSG","Galatasaray","Bursaspor","Kasımpaşa"]],
+["Hamit Altıntop", ["Bayern Munich","Real Madrid","Galatasaray"]],
+["Halil Altıntop", ["Kayserispor","Trabzonspor"]],
+["Emre Akbaba", ["Alanyaspor","Galatasaray"]],
+["Lukas Podolski", ["Bayern Munich","Arsenal","Inter","Galatasaray","Antalyaspor"]],
+["Ryan Donk", ["Ajax","Antalyaspor","Trabzonspor"]],
+["Bruma", ["Sporting CP","Beşiktaş","Galatasaray"]],
+["Garry Rodrigues", ["Galatasaray","Trabzonspor"]],
+["Mbaye Diagne", ["Kasımpaşa","Galatasaray"]],
+["İrfan Can Kahveci", ["Başakşehir","Fenerbahçe"]],
+["Ozan Tufan", ["Bursaspor","Fenerbahçe"]],
+["Hakan Çalhanoğlu", ["Milan","Inter"]],
+["Kerem Aktürkoğlu", ["Galatasaray","Benfica"]],
+["Ozan Kabak", ["Galatasaray","Liverpool"]],
+["Okay Yokuşlu", ["Trabzonspor","Beşiktaş"]],
+["Salih Uçan", ["Fenerbahçe","Roma","Milan","Beşiktaş"]],
+["Emre Mor", ["Borussia Dortmund","Fenerbahçe","Galatasaray"]],
+["Yunus Mallı", ["Beşiktaş","Fenerbahçe"]],
+["Alper Potuk", ["Beşiktaş","Antalyaspor"]],
+["Victor Osimhen", ["Napoli","Galatasaray"]],
+["Nicolas Pepe", ["Arsenal","Trabzonspor"]],
+["Christian Atsu", ["Porto","Chelsea"]],
+["Guti", ["Real Madrid","Beşiktaş"]],
+["Mario Jardel", ["Porto","Galatasaray"]],
+["Umit Karan", ["Galatasaray","Beşiktaş","Fenerbahçe"]],
+["Okan Buruk", ["Galatasaray","Inter"]],
+["Fatih Tekke", ["Trabzonspor","Fenerbahçe","Beşiktaş"]],
+["Servet Çetin", ["Trabzonspor","Galatasaray"]],
+["Thierry Henry", ["Juventus","Arsenal","Barcelona"]],
+["Patrick Vieira", ["Milan","Arsenal","Juventus","Inter","Man City"]],
+["Dennis Bergkamp", ["Ajax","Inter","Arsenal"]],
+["Ruud van Nistelrooy", ["PSV","Man United","Real Madrid"]],
+["Michael Owen", ["Liverpool","Real Madrid","Man United"]],
+["Frank Lampard", ["Chelsea","Man City"]],
+["Petr Cech", ["Chelsea","Arsenal"]],
+["Iker Casillas", ["Real Madrid","Porto"]],
+["Gianluigi Buffon", ["Juventus","PSG"]],
+["Filippo Inzaghi", ["Juventus","Milan"]],
+["Christian Vieri", ["Juventus","Atletico Madrid","Inter","Milan"]],
+["Roberto Baggio", ["Juventus","Milan","Inter"]],
+["George Weah", ["PSG","Milan","Chelsea","Man City"]],
+["Rivaldo", ["Barcelona","Milan"]],
+["Romario", ["PSV","Barcelona"]],
+["Gabriel Batistuta", ["Roma","Inter"]],
+["Hernan Crespo", ["Inter","Chelsea","Milan"]],
+["Roberto Ayala", ["Napoli","Milan"]],
+["Juan Sebastian Veron", ["Man United","Chelsea","Inter"]],
+["Ronaldo Nazario", ["PSV","Barcelona","Inter","Real Madrid","Milan"]],
+["Cafu", ["Roma","Milan"]],
+["Maicon", ["Inter","Man City","Roma"]],
+["Thiago Silva", ["Milan","PSG","Chelsea"]],
+["David Luiz", ["Benfica","Chelsea","PSG","Arsenal"]],
+["Dani Alves", ["Barcelona","Juventus","PSG"]],
+["Philippe Coutinho", ["Inter","Liverpool","Barcelona","Bayern Munich"]],
+["Arthur Melo", ["Barcelona","Juventus","Liverpool"]],
+["Antony", ["Ajax","Man United"]],
+["Alisson Becker", ["Roma","Liverpool"]],
+["Ederson", ["Benfica","Man City"]],
+["Sulley Muntari", ["Inter","Milan"]],
+["Kalidou Koulibaly", ["Napoli","Chelsea"]],
+["Wilfried Zaha", ["Man United","Galatasaray"]],
+["Franck Kessie", ["Milan","Barcelona"]],
+["Shinji Kagawa", ["Borussia Dortmund","Man United","Beşiktaş"]],
+["Park Ji-sung", ["PSV","Man United"]],
+["Mauro Icardi", ["Inter","PSG","Galatasaray"]],
+["Michy Batshuayi", ["Chelsea","Borussia Dortmund","Beşiktaş","Fenerbahçe","Galatasaray"]],
+["Alvaro Morata", ["Real Madrid","Juventus","Chelsea","Atletico Madrid","Milan","Galatasaray"]],
+["Marco Asensio", ["Real Madrid","PSG","Fenerbahçe"]],
+["Hakim Ziyech", ["Ajax","Chelsea","Galatasaray"]],
+["Sofyan Amrabat", ["Man United","Fenerbahçe"]],
+["Mohamed Elneny", ["Arsenal","Beşiktaş"]],
+["Trezeguet", ["Kasımpaşa","Trabzonspor"]],
+["Gary Medel", ["Inter","Beşiktaş"]],
+["Davinson Sanchez", ["Ajax","Tottenham","Galatasaray"]],
+["Rade Krunic", ["Milan","Fenerbahçe"]],
+["Samir Nasri", ["Arsenal","Man City","Antalyaspor"]],
+["Kerem Demirbay", ["PSV","Beşiktaş"]],
+["Simon Kjaer", ["Roma","Fenerbahçe","Milan"]],
+["Tanju Çolak", ["Galatasaray","Fenerbahçe"]],
+["Oktay Derelioğlu", ["Beşiktaş","Fenerbahçe"]],
+["Paul Pogba", ["Man United","Juventus"]],
+["Kevin De Bruyne", ["Chelsea","Man City","Napoli"]],
+["Ilkay Gundogan", ["Borussia Dortmund","Man City","Barcelona"]],
+["Sami Khedira", ["Real Madrid","Juventus"]],
+["Mario Gotze", ["Borussia Dortmund","Bayern Munich","PSV"]],
+["Andre Schurrle", ["Chelsea","Borussia Dortmund"]],
+["Cesc Fabregas", ["Arsenal","Barcelona","Chelsea"]],
+["Gareth Bale", ["Tottenham","Real Madrid"]],
+["Luka Jovic", ["Real Madrid","Milan"]],
+["Antoine Griezmann", ["Atletico Madrid","Barcelona"]],
+["Ousmane Dembele", ["Borussia Dortmund","Barcelona","PSG"]],
+["Olivier Giroud", ["Arsenal","Chelsea","Milan"]],
+["Raphael Varane", ["Real Madrid","Man United"]],
+["Kingsley Coman", ["PSG","Juventus","Bayern Munich"]],
+["Blaise Matuidi", ["PSG","Juventus"]],
+["Bacary Sagna", ["Arsenal","Man City","Benfica"]],
+["Patrice Evra", ["Man United","Juventus"]],
+["Mamadou Sakho", ["PSG","Liverpool"]],
+["Federico Chiesa", ["Juventus","Liverpool"]],
+["Ciro Immobile", ["Juventus","Borussia Dortmund"]],
+["Fabio Cannavaro", ["Napoli","Inter","Juventus","Real Madrid"]],
+["Gianluca Zambrotta", ["Juventus","Barcelona","Milan"]],
+["Luca Toni", ["Bayern Munich","Roma"]],
+["Antonio Cassano", ["Roma","Real Madrid","Milan"]],
+["Marco van Basten", ["Ajax","Milan"]],
+["Ruud Gullit", ["PSV","Milan","Chelsea"]],
+["Frank Rijkaard", ["Ajax","Sporting CP","Milan"]],
+["Clarence Seedorf", ["Ajax","Real Madrid","Inter","Milan"]],
+["Edgar Davids", ["Ajax","Milan","Juventus","Barcelona","Inter","Tottenham"]],
+["David de Gea", ["Atletico Madrid","Man United"]],
+["Thibaut Courtois", ["Chelsea","Atletico Madrid","Real Madrid"]],
+["Jan Oblak", ["Benfica","Atletico Madrid"]],
+["Cesar Azpilicueta", ["Chelsea","Atletico Madrid"]],
+["Fernando Llorente", ["Juventus","Tottenham","Napoli"]],
+["Bernardo Silva", ["Benfica","Man City"]],
+["Bruno Fernandes", ["Sporting CP","Man United"]],
+["Joao Felix", ["Benfica","Atletico Madrid","Chelsea","Barcelona","Milan"]],
+["Joao Cancelo", ["Benfica","Inter","Juventus","Man City","Bayern Munich","Barcelona"]],
+["Ruben Dias", ["Benfica","Man City"]],
+["Diogo Jota", ["Atletico Madrid","Porto","Liverpool"]],
+["Rui Patricio", ["Sporting CP","Roma"]],
+["Renato Sanches", ["Benfica","Bayern Munich","PSG","Roma"]],
+["Frenkie de Jong", ["Ajax","Barcelona"]],
+["Matthijs de Ligt", ["Ajax","Juventus","Bayern Munich","Man United"]],
+["Georginio Wijnaldum", ["PSV","Liverpool","PSG","Roma"]],
+["Memphis Depay", ["PSV","Man United","Barcelona","Atletico Madrid"]],
+["Donny van de Beek", ["Ajax","Man United"]],
+["Denzel Dumfries", ["PSV","Inter"]],
+["Steven Bergwijn", ["PSV","Tottenham","Ajax"]],
+["Klaas-Jan Huntelaar", ["Ajax","Real Madrid","Milan","PSV"]],
+["Romelu Lukaku", ["Chelsea","Man United","Inter","Roma","Napoli"]],
+["Toby Alderweireld", ["Ajax","Atletico Madrid","Tottenham"]],
+["Jan Vertonghen", ["Ajax","Tottenham","Benfica"]],
+["Juan Cuadrado", ["Juventus","Inter"]],
+["Luis Diaz", ["Porto","Liverpool","Bayern Munich"]],
+["Arturo Vidal", ["Juventus","Bayern Munich","Barcelona","Inter"]],
+["Alexis Sanchez", ["Barcelona","Arsenal","Man United","Inter"]],
+["Claudio Bravo", ["Barcelona","Man City"]],
+["Edinson Cavani", ["Napoli","PSG","Man United"]],
+["Diego Godin", ["Atletico Madrid","Inter"]],
+["Rodrigo Bentancur", ["Juventus","Tottenham"]],
+["Nicolas Otamendi", ["Porto","Man City","Benfica"]],
+["Paulo Dybala", ["Juventus","Roma"]],
+["Julian Alvarez", ["Man City","Atletico Madrid"]],
+["Enzo Fernandez", ["Benfica","Chelsea"]],
+["Achraf Hakimi", ["Real Madrid","Borussia Dortmund","Inter","PSG"]],
+["Rafael van der Vaart", ["Ajax","Real Madrid","Tottenham"]],
+["Saffet Sancaklı", ["Galatasaray","Fenerbahçe"]],
+["Sergen Yalçın", ["Beşiktaş","Fenerbahçe","Galatasaray"]],
+["Hasan Vezir", ["Fenerbahçe","Galatasaray"]],
+["Selçuk Yula", ["Fenerbahçe","Galatasaray"]],
+["Stjepan Tomas", ["Fenerbahçe","Galatasaray"]],
+["Emre Aşık", ["Fenerbahçe","Galatasaray","Beşiktaş"]],
+["Mehmet Yozgatlı", ["Galatasaray","Fenerbahçe","Beşiktaş"]],
+["Olcan Adın", ["Fenerbahçe","Trabzonspor","Galatasaray"]],
+["Şener Özbayraklı", ["Fenerbahçe","Galatasaray"]],
+["Sinan Gümüş", ["Galatasaray","Fenerbahçe"]],
+["Bartuğ Elmaz", ["Galatasaray","Fenerbahçe"]],
+["Gökhan Gönül", ["Fenerbahçe","Beşiktaş"]],
+["Egemen Korkmaz", ["Trabzonspor","Beşiktaş","Fenerbahçe"]],
+["Ali Güneş", ["Fenerbahçe","Beşiktaş"]],
+["Mehmet Aurelio", ["Trabzonspor","Fenerbahçe","Beşiktaş"]],
+["Feyyaz Uçar", ["Beşiktaş","Fenerbahçe"]],
+["Tümer Metin", ["Beşiktaş","Fenerbahçe"]],
+["Alpay Özalan", ["Beşiktaş","Fenerbahçe"]],
+["Mustafa Doğan", ["Fenerbahçe","Beşiktaş"]],
+["İsmail Köybaşı", ["Beşiktaş","Fenerbahçe"]],
+["Engin İpekoğlu", ["Beşiktaş","Fenerbahçe"]],
+["Ahmet Yıldırım", ["Fenerbahçe","Galatasaray","Beşiktaş"]],
+["Abdullah Ercan", ["Trabzonspor","Fenerbahçe","Galatasaray"]],
+["Luis Figo", ["Sporting CP","Barcelona","Real Madrid","Inter"]],
+["Michael Laudrup", ["Ajax","Juventus","Barcelona","Real Madrid"]],
+["Luis Enrique", ["Real Madrid","Barcelona"]],
+["Gheorghe Hagi", ["Real Madrid","Barcelona","Galatasaray"]],
+["Alfredo Di Stefano", ["Real Madrid","Barcelona"]],
+["Javier Saviola", ["Barcelona","Real Madrid","Benfica"]],
+["Robert Prosinecki", ["Real Madrid","Barcelona"]],
+["Luis Milla", ["Barcelona","Real Madrid"]],
+["Marc Cucurella", ["Barcelona","Chelsea","Real Madrid"]],
+["Marcos Alonso", ["Real Madrid","Chelsea","Barcelona"]],
+["Ashley Cole", ["Arsenal","Chelsea","Roma"]],
+["Sol Campbell", ["Tottenham","Arsenal"]],
+["Robbie Keane", ["Inter","Tottenham","Liverpool"]],
+["Peter Crouch", ["Tottenham","Liverpool"]],
+["Ashley Young", ["Man United","Inter"]],
+["James Milner", ["Man City","Liverpool"]],
+["Joe Cole", ["Chelsea","Liverpool"]],
+["Shaun Wright-Phillips", ["Man City","Chelsea"]],
+["Michael Carrick", ["Tottenham","Man United"]],
+["Kyle Walker", ["Tottenham","Man City","Milan"]],
+["Kieran Trippier", ["Man City","Tottenham","Atletico Madrid"]],
+["Danny Welbeck", ["Man United","Arsenal"]],
+["Raheem Sterling", ["Liverpool","Man City","Chelsea","Arsenal"]],
+["Trent Alexander-Arnold", ["Liverpool","Real Madrid"]],
+["Harry Kane", ["Tottenham","Bayern Munich"]],
+["Jadon Sancho", ["Man City","Borussia Dortmund","Man United","Chelsea"]],
+["Christoph Metzelder", ["Borussia Dortmund","Real Madrid"]],
+["Michael Ballack", ["Bayern Munich","Chelsea"]],
+["Jens Lehmann", ["Milan","Borussia Dortmund","Arsenal"]],
+["Timo Werner", ["Chelsea","Tottenham"]],
+["Leroy Sane", ["Man City","Bayern Munich"]],
+["Serge Gnabry", ["Arsenal","Bayern Munich"]],
+["Julian Draxler", ["PSG","Benfica"]],
+["Salvatore Schillaci", ["Juventus","Inter"]],
+["Stephan El Shaarawy", ["Milan","Roma"]],
+["Leonardo Bonucci", ["Inter","Juventus","Milan","Fenerbahçe"]],
+["Florent Malouda", ["Chelsea","Trabzonspor"]],
+["Nicolas Anelka", ["PSG","Arsenal","Real Madrid","Liverpool","Man City","Chelsea","Juventus"]],
+["Louis Saha", ["Man United","Tottenham"]],
+["William Gallas", ["Chelsea","Arsenal","Tottenham"]],
+["Lilian Thuram", ["Juventus","Barcelona"]],
+["Marcel Desailly", ["Milan","Chelsea"]],
+["Youri Djorkaeff", ["PSG","Inter"]],
+["Christophe Dugarry", ["Milan","Barcelona"]],
+["Edwin van der Sar", ["Ajax","Juventus","Man United"]],
+["Patrick Kluivert", ["Ajax","Milan","Barcelona","PSV"]],
+["Pierre van Hooijdonk", ["Benfica","Fenerbahçe"]],
+["Boudewijn Zenden", ["PSV","Chelsea","Barcelona","Liverpool"]],
+["Phillip Cocu", ["PSV","Barcelona"]],
+["Giovanni van Bronckhorst", ["Arsenal","Barcelona"]],
+["Ivan Zamorano", ["Real Madrid","Inter"]],
+["Jay-Jay Okocha", ["Fenerbahçe","PSG"]],
+["Nwankwo Kanu", ["Ajax","Inter","Arsenal"]],
+["Rigobert Song", ["Liverpool","Trabzonspor","Galatasaray"]],
+["Sunday Oliseh", ["Borussia Dortmund","Juventus","Ajax"]],
+["Ersen Martin", ["Beşiktaş","Trabzonspor"]],
+["Çağdaş Atan", ["Beşiktaş","Trabzonspor"]],
+["Erkan Zengin", ["Trabzonspor","Beşiktaş"]],
+["Ogün Temizkanoğlu", ["Trabzonspor","Fenerbahçe"]],
+["Serkan Balcı", ["Trabzonspor","Fenerbahçe"]],
+["Gökhan Ünal", ["Trabzonspor","Fenerbahçe"]],
+["Mehmet Ekici", ["Trabzonspor","Fenerbahçe"]],
+["Filip Novak", ["Trabzonspor","Fenerbahçe"]],
+["Umut Nayir", ["Trabzonspor","Fenerbahçe","Beşiktaş"]],
+["Tolgay Arslan", ["Beşiktaş","Fenerbahçe"]],
+["Mamadou Niang", ["Fenerbahçe","Beşiktaş"]],
+["Edin Visca", ["Trabzonspor","Başakşehir"]],
+["Stefan Savic", ["Man City","Atletico Madrid","Trabzonspor"]],
+["Vaclav Cerny", ["Ajax","Beşiktaş"]],
+["Kristjan Asllani", ["Inter","Beşiktaş"]],
+["Ayhan Akman", ["Beşiktaş","Galatasaray"]],
+["Yusuf Şimşek", ["Fenerbahçe","Beşiktaş"]],
+["Zinedine Zidane", ["Juventus","Real Madrid"]],
+["Christian Panucci", ["Milan","Real Madrid"]],
+["Fernando Redondo", ["Real Madrid","Milan"]],
+["Ricardo Carvalho", ["Porto","Chelsea","Real Madrid"]],
+["Deco", ["Porto","Barcelona","Chelsea"]],
+["Emmanuel Petit", ["Arsenal","Barcelona","Chelsea"]],
+["Marc Overmars", ["Ajax","Arsenal","Barcelona"]],
+["Gael Clichy", ["Arsenal","Man City"]],
+["Emmanuel Eboue", ["Arsenal","Galatasaray"]],
+["Pierre-Emerick Aubameyang", ["Borussia Dortmund","Arsenal","Barcelona","Chelsea"]],
+["Henrikh Mkhitaryan", ["Borussia Dortmund","Man United","Arsenal","Roma","Inter"]],
+["Thiago Alcantara", ["Barcelona","Bayern Munich","Liverpool"]],
+["Owen Hargreaves", ["Bayern Munich","Man United"]],
+["Emre Can", ["Liverpool","Juventus"]],
+["Christian Eriksen", ["Ajax","Tottenham","Inter","Man United"]],
+["Dimitar Berbatov", ["Tottenham","Man United"]],
+["Joao Mario", ["Sporting CP","Inter","Galatasaray"]],
+["Daley Blind", ["Ajax","Man United"]],
+["Juan Mata", ["Chelsea","Man United"]],
+["Chris Smalling", ["Man United","Roma"]],
+["Bernd Schuster", ["Real Madrid","Barcelona"]],
+["Claude Makelele", ["Real Madrid","Chelsea","PSG"]],
+["Xherdan Shaqiri", ["Bayern Munich","Inter","Liverpool"]]
+];
+
+const PLAYERS = RAW.map(([name, clubs]) => ({ name, clubs: [...new Set(clubs)] }));
+const CLUBS = [...new Set(PLAYERS.flatMap(p => p.clubs))].sort((a,b)=>a.localeCompare(b,'tr'));
+const PLAYER_NAMES = [...new Set(PLAYERS.map(p=>p.name))].sort((a,b)=>a.localeCompare(b,'tr'));
+
+const AI_ID = 'ai_bot';
+
+function normalize(s){
+  return (s||"")
+    .toLocaleLowerCase('tr')
+    .replace(/İ/g,'i').replace(/I/g,'ı')
+    .replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u')
+    .replace(/ö/g,'o').replace(/ç/g,'c').replace(/ı/g,'i')
+    .replace(/[^a-z0-9\s]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function findPlayerByName(guess){
+  const n = normalize(guess);
+  if(!n) return null;
+  return PLAYERS.find(p => normalize(p.name) === n) || null;
+}
+function checkCommon(guess, teamA, teamB){
+  const p = findPlayerByName(guess);
+  if(!p) return {found:false};
+  const has = p.clubs.includes(teamA) && p.clubs.includes(teamB);
+  return {found:true, correct:has, canonicalName:p.name};
+}
+function findCommonPlayer(teamA, teamB){
+  const matches = PLAYERS.filter(p => p.clubs.includes(teamA) && p.clubs.includes(teamB));
+  if(matches.length===0) return null;
+  return matches[Math.floor(Math.random()*matches.length)].name;
+}
+function pickAiTeam(userTeam){
+  const candidates = CLUBS.filter(c => c!==userTeam && PLAYERS.some(p=>p.clubs.includes(userTeam) && p.clubs.includes(c)));
+  const pool = candidates.length ? candidates : CLUBS.filter(c=>c!==userTeam);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+// ---------- STORAGE HELPERS ----------
+// ---------- STORAGE HELPERS ----------
+async function getRoom(code){
+  try{
+    const snapshot = await db.ref('rooms/' + code).once('value');
+    if(snapshot.exists()){
+      let r = snapshot.val();
+      r.teams = r.teams || {};
+      r.guesses = r.guesses || [];
+      r.passes = r.passes || {};
+      r.scores = r.scores || {};
+      return r;
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+async function setRoom(code, obj){
+  try{
+    await db.ref('rooms/' + code).set(obj);
+    return true;
+  }catch(e){ return false; }
+}
+function genCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for(let i=0;i<5;i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function uid(){ return 'p_' + Math.random().toString(36).slice(2,10); }
+
+// ---------- APP STATE ----------
+const app = document.getElementById('app');
+let myId = uid();
+let myName = '';
+let roomCode = '';
+let mode = null; // null | 'mp' | 'ai'
+let pollTimer = null;
+let aiTickTimer = null;
+let currentRoomState = null;
+let aiRoom = null;
+let lastRoomJSON = '';
+let localGuessDraft = '';
+let localTeamDraft = '';
+let localErr = '';
+let savedFocus = null;
+
+function saveFocus(){
+  const el = document.activeElement;
+  if(el && el.id && app.contains(el)){
+    savedFocus = {id: el.id, start: el.selectionStart, end: el.selectionEnd};
+  } else savedFocus = null;
+}
+function restoreFocus(){
+  if(!savedFocus) return;
+  const el = document.getElementById(savedFocus.id);
+  if(el){
+    el.focus();
+    if(typeof el.setSelectionRange === 'function' && savedFocus.start != null){
+      try{ el.setSelectionRange(savedFocus.start, savedFocus.end); }catch(e){}
+    }
+  }
+}
+
+function render(){
+  saveFocus();
+  app.innerHTML = '';
+  if(mode === 'ai'){
+    app.appendChild(renderRoom(aiRoom));
+  } else if(mode === 'mp'){
+    if(!currentRoomState){
+      const d = document.createElement('div');
+      d.className = 'loading';
+      d.textContent = 'Odaya bağlanılıyor...';
+      app.appendChild(d);
+    } else {
+      app.appendChild(renderRoom(currentRoomState));
+    }
+  } else {
+    app.appendChild(renderHome());
+  }
+  restoreFocus();
+}
+
+function meInRoom(room){ return room.players.find(p=>p.id===myId); }
+function opponentInRoom(room){ return room.players.find(p=>p.id!==myId); }
+
+// ---------- PERSIST / MUTATION HELPERS ----------
+async function freshRoomOf(room){
+  if(room.mode === 'ai') return aiRoom;
+  const r = await getRoom(roomCode);
+  return r || room;
+}
+async function persist(room){
+  if(room.mode === 'ai'){
+    aiRoom = room;
+  } else {
+    await setRoom(roomCode, room);
+    currentRoomState = room;
+    lastRoomJSON = JSON.stringify(room);
+  }
+  render();
+}
+function resetRound(fresh){
+  fresh.teams = {};
+  fresh.guesses = [];
+  fresh.passes = {};
+  fresh.phase = 'teams';
+  fresh.winner = null;
+  fresh.winningPlayerFound = null;
+  fresh.round = (fresh.round||1) + 1;
+  fresh.secretAnswer = null;
+  fresh.startAt = null;
+  fresh._wrongAt = null;
+  fresh._finalAt = null;
+  fresh._wrongDone = false;
+}
+
+// ---------- HOME SCREEN ----------
+function renderHome(){
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `
+    <label>Rumuzun</label>
+    <input type="text" id="nameInput" placeholder="örn. Kartal47" maxlength="18" value="${myName}">
+    <div class="modepick">
+      <button id="createBtn">Oda Kur (Online 2 Kişi)</button>
+      <button class="ghost" id="joinToggle">Odaya Katıl</button>
+      <button class="ghost" id="aiBtn">Tek Oyunculu · Yapay Zekaya Karşı</button>
+    </div>
+    <div id="joinBox" style="display:none;margin-top:16px;">
+      <label>Oda Kodu</label>
+      <input type="text" id="codeInput" placeholder="örn. K4T9X" maxlength="5" style="text-transform:uppercase;">
+      <div class="row" style="margin-top:12px;"><button id="joinBtn">Katıl</button></div>
+    </div>
+    ${localErr ? `<div class="err">${localErr}</div>` : ''}
+    <div class="hint">Aynı odaya iki farklı tarayıcı/cihazdan girip online oynayabilirsiniz. Veritabanında ${PLAYER_NAMES.length} oyuncu ve ${CLUBS.length} kulüp var.</div>
+  `;
+  div.querySelector('#nameInput').addEventListener('input', e => myName = e.target.value);
+  div.querySelector('#joinToggle').addEventListener('click', () => {
+    div.querySelector('#joinBox').style.display = 'block';
+  });
+  div.querySelector('#createBtn').addEventListener('click', async () => {
+    localErr='';
+    if(!myName.trim()){ localErr='Önce rumuzunu yaz.'; render(); return; }
+    const code = genCode();
+    const room = {
+      mode:'mp', code, createdAt: Date.now(),
+      players: [{id: myId, name: myName.trim()}],
+      teams: {}, phase: 'lobby', guesses: [], passes:{}, winner: null,
+      winningPlayerFound: null, round: 1, scores: {}, startAt:null
+    };
+    room.scores[myId] = 0;
+    const ok = await setRoom(code, room);
+    if(!ok){ localErr='Oda kurulamadı, tekrar dene.'; render(); return; }
+    roomCode = code; mode = 'mp';
+    currentRoomState = room; lastRoomJSON = JSON.stringify(room);
+    startPolling();
+    render();
+  });
+  div.querySelector('#joinBtn').addEventListener('click', async () => {
+    localErr='';
+    if(!myName.trim()){ localErr='Önce rumuzunu yaz.'; render(); return; }
+    const code = (div.querySelector('#codeInput').value||'').trim().toUpperCase();
+    if(!code){ localErr='Oda kodu gir.'; render(); return; }
+    const room = await getRoom(code);
+    if(!room){ localErr='Bu kodda bir oda bulunamadı.'; render(); return; }
+    if(!room.players.find(p=>p.id===myId)){
+      if(room.players.length >= 2){ localErr='Bu oda dolu.'; render(); return; }
+      room.players.push({id: myId, name: myName.trim()});
+      room.scores[myId] = 0;
+      if(room.players.length === 2) room.phase = 'teams';
+      const ok = await setRoom(code, room);
+      if(!ok){ localErr='Katılamadın, tekrar dene.'; render(); return; }
+    }
+    roomCode = code; mode = 'mp';
+    currentRoomState = room; lastRoomJSON = JSON.stringify(room);
+    startPolling();
+    render();
+  });
+  div.querySelector('#aiBtn').addEventListener('click', () => {
+    localErr='';
+    if(!myName.trim()){ localErr='Önce rumuzunu yaz.'; render(); return; }
+    startAiGame();
+    render();
+  });
+  return div;
+}
+
+function startAiGame(){
+  mode = 'ai';
+  aiRoom = {
+    mode:'ai', code:null, createdAt: Date.now(),
+    players: [{id: myId, name: myName.trim()}, {id: AI_ID, name: 'Yapay Zeka 🤖'}],
+    teams: {}, phase: 'teams', guesses: [], passes: {}, winner: null,
+    winningPlayerFound: null, round: 1, scores: {[myId]:0, [AI_ID]:0},
+    secretAnswer: null, startAt: null, _wrongAt: null, _finalAt: null, _wrongDone: false
+  };
+  if(aiTickTimer) clearInterval(aiTickTimer);
+  aiTickTimer = setInterval(aiTick, 400);
+}
+
+function aiTick(){
+  if(mode !== 'ai' || !aiRoom) return;
+  const now = Date.now();
+  if(aiRoom.phase === 'playing'){
+    if(aiRoom._wrongAt && !aiRoom._wrongDone && now >= aiRoom._wrongAt){
+      aiRoom._wrongDone = true;
+      const pool = PLAYER_NAMES.filter(n => n !== aiRoom.secretAnswer && !aiRoom.guesses.some(g=>normalize(g.playerName)===normalize(n)));
+      if(pool.length){
+        const guess = pool[Math.floor(Math.random()*pool.length)];
+        aiRoom.guesses.push({id:Math.random().toString(36).slice(2), playerId:AI_ID, playerName:guess, by:'Yapay Zeka 🤖', correct:false, ts:Date.now()});
+        persist(aiRoom);
+      }
+      return;
+    }
+    if(aiRoom.secretAnswer && now >= aiRoom._finalAt){
+      aiRoom.guesses.push({id:Math.random().toString(36).slice(2), playerId:AI_ID, playerName:aiRoom.secretAnswer, by:'Yapay Zeka 🤖', correct:true, ts:Date.now()});
+      aiRoom.phase = 'finished';
+      aiRoom.winner = AI_ID;
+      aiRoom.winningPlayerFound = aiRoom.secretAnswer;
+      aiRoom.scores[AI_ID] = (aiRoom.scores[AI_ID]||0) + 1;
+      persist(aiRoom);
+      return;
+    }
+    if(!aiRoom.secretAnswer && now >= aiRoom._finalAt){
+      // ortak oyuncu bulunamadı, pas geçilmiş gibi davran
+      resetRound(aiRoom);
+      persist(aiRoom);
+    }
+  }
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  poll();
+  pollTimer = setInterval(poll, 1800);
+}
+async function poll(){
+  if(!roomCode || mode !== 'mp') return;
+  let room = await getRoom(roomCode);
+  if(!room) return;
+  const json = JSON.stringify(room);
+  if(json !== lastRoomJSON){
+    lastRoomJSON = json;
+    currentRoomState = room;
+    render();
+  }
+}
+
+function leaveRoom(){
+  if(pollTimer) clearInterval(pollTimer);
+  if(aiTickTimer) clearInterval(aiTickTimer);
+  pollTimer = null; aiTickTimer = null;
+  mode = null; roomCode = '';
+  currentRoomState = null; aiRoom = null; lastRoomJSON='';
+  localErr=''; localGuessDraft=''; localTeamDraft='';
+  render();
+}
+
+// ---------- ROOM RENDER (shared by mp & ai) ----------
+function renderRoom(room){
+  const container = document.createElement('div');
+
+  if(room.mode === 'mp' && room.players.length < 2){
+    container.innerHTML = `
+      <div class="card">
+        <div class="roomcode">${room.code}</div>
+        <div class="hint center">Bu kodu rakibine gönder, iki cihazda da bu sayfayı açıp katılsın.</div>
+        <div class="playerslots">
+          <div class="slot filled"><div class="tag">Sen</div><div class="name">${meInRoom(room)?.name || myName}</div></div>
+          <div class="slot"><div class="tag">Rakip</div><div class="empty">Bekleniyor…</div></div>
+        </div>
+        <div class="status-line live">RAKİP BEKLENİYOR</div>
+        <div class="row" style="margin-top:20px;"><button class="ghost" id="copyCode">Kodu Kopyala</button><button class="ghost" id="leaveBtn">Odadan Çık</button></div>
+      </div>
+    `;
+    container.querySelector('#copyCode').addEventListener('click', ()=>{ navigator.clipboard?.writeText(room.code); });
+    container.querySelector('#leaveBtn').addEventListener('click', leaveRoom);
+    return container;
+  }
+
+  if(room.phase === 'teams'){
+    const myTeamSet = room.teams[myId];
+    const oppId = opponentInRoom(room)?.id;
+    const oppTeamSet = oppId ? room.teams[oppId] : null;
+    container.innerHTML = `
+      <div class="card">
+        <div class="status-line">TUR ${room.round}</div>
+        <label style="margin-top:14px;">Senin Takımın</label>
+        <input type="text" id="teamInput" list="clubList" placeholder="Bir kulüp yaz (örn. Trabzonspor)" value="${myTeamSet || localTeamDraft}" ${myTeamSet ? 'disabled' : ''}>
+        <datalist id="clubList">${CLUBS.map(c=>`<option value="${c}">`).join('')}</datalist>
+        ${!myTeamSet ? `<div class="row" style="margin-top:12px;"><button id="setTeamBtn">Takımı Onayla</button></div>` : `<div class="hint">Takımın kilitlendi: <b>${myTeamSet}</b></div>`}
+        <div class="playerslots" style="margin-top:20px;">
+          <div class="slot ${myTeamSet?'filled':''}"><div class="tag">${meInRoom(room)?.name}</div><div class="name">${myTeamSet || '···'}</div></div>
+          <div class="slot ${oppTeamSet?'filled':''}"><div class="tag">${opponentInRoom(room)?.name}</div><div class="name">${oppTeamSet ? (myTeamSet ? oppTeamSet : '✓ Hazır') : '···'}</div></div>
+        </div>
+        ${localErr ? `<div class="err">${localErr}</div>` : ''}
+        <div class="row" style="margin-top:18px;"><button class="ghost small" id="leaveBtn3">Odadan Çık</button></div>
+        <div class="status-line live" style="margin-top:10px;">TAKIMLAR BEKLENİYOR</div>
+      </div>
+    `;
+    const input = container.querySelector('#teamInput');
+    if(input) input.addEventListener('input', e => localTeamDraft = e.target.value);
+    const btn = container.querySelector('#setTeamBtn');
+    if(btn) btn.addEventListener('click', async () => {
+      localErr = '';
+      const val = (localTeamDraft || '').trim();
+      const match = CLUBS.find(c => normalize(c) === normalize(val));
+      if(!match){ localErr = 'Listeden geçerli bir kulüp seç.'; render(); return; }
+      let fresh = await freshRoomOf(room);
+      fresh.teams[myId] = match;
+      if(fresh.mode === 'ai'){
+        const aiTeam = pickAiTeam(match);
+        fresh.teams[AI_ID] = aiTeam;
+        fresh.secretAnswer = findCommonPlayer(match, aiTeam);
+        fresh.phase = 'playing';
+        fresh._wrongAt = (Math.random() < 0.35) ? Date.now() + 2000 + Math.random()*4000 : null;
+        fresh._finalAt = Date.now() + 5000 + Math.random()*11000;
+        fresh._wrongDone = false;
+      } else if(Object.keys(fresh.teams).length === 2){
+        fresh.phase = 'playing';
+      }
+      localTeamDraft='';
+      await persist(fresh);
+    });
+    const lb = container.querySelector('#leaveBtn3');
+    if(lb) lb.addEventListener('click', leaveRoom);
+    return container;
+  }
+
+  if(room.phase === 'playing'){
+    const oppId = opponentInRoom(room)?.id;
+    const teamA = room.teams[myId];
+    const teamB = room.teams[oppId];
+    const iPassed = room.passes && room.passes[myId];
+    const oppPassed = room.passes && oppId && room.passes[oppId];
+    container.innerHTML = `
+      <div class="card">
+        <div class="scoreboard">
+          <div class="teampanel"><div class="who">${meInRoom(room)?.name}</div><div class="team">${teamA}</div></div>
+          <div class="vs">VS</div>
+          <div class="teampanel"><div class="who">${opponentInRoom(room)?.name}</div><div class="team">${teamB}</div></div>
+        </div>
+        ${iPassed ? `
+          <div class="waitpass">SEN PAS GEÇTİN.${oppPassed ? '' : ' RAKİBİN KARARI BEKLENİYOR…'}</div>
+        ` : `
+          <label>İkisinde de oynamış bir futbolcu yaz</label>
+          <input type="text" id="guessInput" list="playerList" placeholder="Oyuncu adı..." value="${localGuessDraft}">
+          <datalist id="playerList">${PLAYER_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>
+          <div class="row" style="margin-top:12px;">
+            <button id="guessBtn">Tahmin Et</button>
+            <button class="ghost" id="passBtn">Pas Geç</button>
+          </div>
+          ${oppPassed ? '<div class="hint">Rakibin pas geçmek istiyor.</div>' : ''}
+          ${localErr ? `<div class="err">${localErr}</div>` : ''}
+        `}
+        <div class="feed">
+          ${room.guesses.length === 0 ? '<div class="feed-empty">Henüz tahmin yok. İlk sen dene.</div>' :
+            [...room.guesses].reverse().map(g => `
+              <div class="feed-item ${g.correct ? 'correct' : 'wrong'}">
+                <span class="g-name">${g.playerName}</span>
+                <span class="g-by">${g.by}</span>
+              </div>
+            `).join('')
+          }
+        </div>
+        <div class="status-line live" style="margin-top:14px;">CANLI · İlk doğru bilen kazanır</div>
+      </div>
+    `;
+    const input = container.querySelector('#guessInput');
+    if(input){
+      input.addEventListener('input', e => localGuessDraft = e.target.value);
+      input.addEventListener('keydown', e => { if(e.key==='Enter') submitGuess(); });
+    }
+    const gb = container.querySelector('#guessBtn');
+    if(gb) gb.addEventListener('click', submitGuess);
+    const pb = container.querySelector('#passBtn');
+    if(pb) pb.addEventListener('click', async () => {
+      let fresh = await freshRoomOf(room);
+      if(fresh.phase !== 'playing') { await persist(fresh); return; }
+      fresh.passes = fresh.passes || {};
+      fresh.passes[myId] = true;
+      const oId = fresh.players.find(p=>p.id!==myId)?.id;
+      if(fresh.mode === 'ai' || (oId && fresh.passes[oId])){
+        resetRound(fresh);
+      }
+      await persist(fresh);
+    });
+
+    async function submitGuess(){
+      localErr = '';
+      const val = (localGuessDraft||'').trim();
+      if(!val) return;
+      let fresh = await freshRoomOf(room);
+      if(fresh.phase !== 'playing'){ await persist(fresh); return; }
+      const oId = fresh.players.find(p=>p.id!==myId)?.id;
+      const tA = fresh.teams[myId], tB = fresh.teams[oId];
+      const res = checkCommon(val, tA, tB);
+      if(!res.found){ localErr = 'Bu isimde bir oyuncu veritabanında yok. Listeden seçmeyi dene.'; render(); return; }
+      const already = fresh.guesses.find(g => normalize(g.playerName) === normalize(res.canonicalName));
+      if(already){ localErr = 'Bu isim zaten denendi.'; render(); return; }
+      fresh.guesses.push({
+        id: Math.random().toString(36).slice(2),
+        playerId: myId, playerName: res.canonicalName,
+        by: meInRoom(fresh)?.name || myName, correct: res.correct, ts: Date.now()
+      });
+      if(res.correct){
+        fresh.phase = 'finished';
+        fresh.winner = myId;
+        fresh.winningPlayerFound = res.canonicalName;
+        fresh.scores[myId] = (fresh.scores[myId]||0) + 1;
+      }
+      localGuessDraft = '';
+      await persist(fresh);
+    }
+    return container;
+  }
+
+  if(room.phase === 'finished'){
+    const winnerName = room.players.find(p=>p.id===room.winner)?.name || '?';
+    const iWon = room.winner === myId;
+    const p0 = room.players[0], p1 = room.players[1];
+    container.innerHTML = `
+      <div class="card flipcard ${iWon ? 'win' : 'lose'}">
+        <div class="label">${iWon ? '🏆 KAZANDIN' : winnerName.toUpperCase() + ' BULDU'}</div>
+        <div class="flipname">${room.winningPlayerFound}</div>
+        <div class="hint">${room.teams[p0.id]} × ${room.teams[p1.id]}</div>
+        <div class="score-strip">
+          ${room.players.map(p => `<span>${p.name} <b>${room.scores[p.id]||0}</b></span>`).join('')}
+        </div>
+        <div class="row" style="margin-top:24px;"><button id="againBtn">Yeni Tur</button><button class="ghost" id="leaveBtn2">Odadan Çık</button></div>
+      </div>
+    `;
+    container.querySelector('#againBtn').addEventListener('click', async () => {
+      let fresh = await freshRoomOf(room);
+      resetRound(fresh);
+      await persist(fresh);
+    });
+    container.querySelector('#leaveBtn2').addEventListener('click', leaveRoom);
+    return container;
+  }
+
+  const fallback = document.createElement('div');
+  fallback.className = 'loading';
+  fallback.textContent = 'Durum senkronize ediliyor...';
+  return fallback;
+}
+
+// theme toggle (static, outside re-rendered area)
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', () => {
+  const stadium = document.body.classList.toggle('theme-stadium');
+  themeBtn.textContent = 'Görünüm: ' + (stadium ? 'Stadyum' : 'Sade');
+});
+
+render();
+})();
+</script>
+</body>
+</html>
